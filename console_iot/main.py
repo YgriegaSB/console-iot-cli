@@ -3,14 +3,11 @@ import time
 import os
 import sys
 
-# Autocompletado con Tab
-try:
-    import readline
-except ImportError:
-    try:
-        import pyreadline3 as readline
-    except ImportError:
-        readline = None
+# Prompt Toolkit para autocompletado moderno
+from prompt_toolkit import PromptSession
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.styles import Style
+from prompt_toolkit.formatted_text import HTML
 
 from .utils.logger import Logger
 from .utils.colors import Colors
@@ -24,45 +21,26 @@ COMMANDS = [
     '/connect', '/listen', '/udp', '/view', '/rts', '/dtr', '/status'
 ]
 
-class CommandCompleter:
-    def __init__(self, commands):
-        self.commands = commands
-        self.matches = []
+# Estilo para el prompt
+prompt_style = Style.from_dict({
+    'prompt': '#00aa00 bold',  # Verde para el prompt
+})
 
-    def complete(self, text, state):
-        if state == 0:
-            # Primera vez que se llama, generar lista de coincidencias
-            if text:
-                self.matches = [cmd for cmd in self.commands if cmd.startswith(text)]
-            else:
-                self.matches = self.commands[:]
-        
-        try:
-            return self.matches[state]
-        except IndexError:
-            return None
-
-def setup_autocomplete():
-    """Configura el autocompletado con Tab"""
-    if readline:
-        completer = CommandCompleter(COMMANDS)
-        readline.set_completer(completer.complete)
-        
-        # Configuración para diferentes plataformas
-        if sys.platform == 'win32':
-            # Windows con pyreadline3
-            readline.parse_and_bind('tab: complete')
-            readline.parse_and_bind('set show-all-if-ambiguous on')
-            readline.parse_and_bind('set completion-display-width 0')
-        else:
-            # Linux/Mac con readline nativo
-            readline.parse_and_bind('tab: complete')
-            readline.parse_and_bind('set show-all-if-ambiguous on')
-            readline.parse_and_bind('set completion-query-items 100')
-            readline.parse_and_bind('set page-completions off')
-        
-        # Configurar delimitadores para que reconozca '/' como inicio de palabra
-        readline.set_completer_delims(' \t\n')
+def create_prompt_session():
+    """Crea una sesión de prompt_toolkit con autocompletado"""
+    completer = WordCompleter(
+        COMMANDS,
+        ignore_case=True,
+        sentence=True,
+        match_middle=True
+    )
+    
+    return PromptSession(
+        completer=completer,
+        style=prompt_style,
+        complete_while_typing=True,
+        mouse_support=False
+    )
 
 def print_help():
     help_text = f"""
@@ -104,16 +82,15 @@ def main():
     if args.headless:
         Colors.disable()
 
-    # Configurar autocompletado con Tab
-    if not args.headless:
-        setup_autocomplete()
-
     logger = Logger(args.log)
     
+    # Crear sesión de prompt_toolkit para autocompletado moderno
+    prompt_session = None
     if not args.headless:
+        prompt_session = create_prompt_session()
         print(f"{Colors.HEADER}=== Console IoT CLI ==={Colors.ENDC}")
         print("Escribe '/help' para ver los comandos disponibles.")
-
+    
     connection = None
     
     # Auto-conexión si se proveen argumentos (Serial por defecto)
@@ -141,7 +118,11 @@ def main():
                     time.sleep(1)
                     continue
 
-                user_input = input()
+                # Usar prompt_toolkit para input con autocompletado
+                try:
+                    user_input = prompt_session.prompt(HTML('<prompt>></prompt> '))
+                except (EOFError, KeyboardInterrupt):
+                    break
                 
                 if not user_input.strip():
                     continue

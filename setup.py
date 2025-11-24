@@ -9,7 +9,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "pyserial>=3.5",
-        'pyreadline3>=3.4; sys_platform == "win32"',
+        "prompt_toolkit>=3.0.0",
     ],
     entry_points={
         "console_scripts": [
