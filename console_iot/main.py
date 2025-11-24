@@ -2,11 +2,67 @@ import argparse
 import time
 import os
 import sys
+
+# Autocompletado con Tab
+try:
+    import readline
+except ImportError:
+    try:
+        import pyreadline3 as readline
+    except ImportError:
+        readline = None
+
 from .utils.logger import Logger
 from .utils.colors import Colors
 from .connections.serial_conn import SerialConnection, list_available_ports
 from .connections.tcp_conn import TCPClientConnection, TCPServerConnection
 from .connections.udp_conn import UDPConnection
+
+# Lista de comandos disponibles para autocompletado
+COMMANDS = [
+    '/help', '/list', '/clear', '/exit', '/disconnect',
+    '/connect', '/listen', '/udp', '/view', '/rts', '/dtr', '/status'
+]
+
+class CommandCompleter:
+    def __init__(self, commands):
+        self.commands = commands
+        self.matches = []
+
+    def complete(self, text, state):
+        if state == 0:
+            # Primera vez que se llama, generar lista de coincidencias
+            if text:
+                self.matches = [cmd for cmd in self.commands if cmd.startswith(text)]
+            else:
+                self.matches = self.commands[:]
+        
+        try:
+            return self.matches[state]
+        except IndexError:
+            return None
+
+def setup_autocomplete():
+    """Configura el autocompletado con Tab"""
+    if readline:
+        completer = CommandCompleter(COMMANDS)
+        readline.set_completer(completer.complete)
+        
+        # Configuración para diferentes plataformas
+        if sys.platform == 'win32':
+            # Windows con pyreadline3
+            readline.parse_and_bind('tab: complete')
+            readline.parse_and_bind('set show-all-if-ambiguous on')
+            readline.parse_and_bind('set completion-display-width 0')
+        else:
+            # Linux/Mac con readline nativo
+            readline.parse_and_bind('tab: complete')
+            readline.parse_and_bind('set show-all-if-ambiguous on')
+            readline.parse_and_bind('set completion-query-items 100')
+            readline.parse_and_bind('set page-completions off')
+        
+        # Configurar delimitadores para que reconozca '/' como inicio de palabra
+        readline.set_completer_delims(' \t\n')
 
 def print_help():
     help_text = f"""
@@ -47,6 +103,10 @@ def main():
 
     if args.headless:
         Colors.disable()
+
+    # Configurar autocompletado con Tab
+    if not args.headless:
+        setup_autocomplete()
 
     logger = Logger(args.log)
     
@@ -99,8 +159,10 @@ def main():
                         print(f"  {Colors.BOLD}/rts [on|off]{Colors.ENDC}     : Controlar línea RTS.")
                         print(f"  {Colors.BOLD}/dtr [on|off]{Colors.ENDC}     : Controlar línea DTR.")
                         print(f"  {Colors.BOLD}/status{Colors.ENDC}          : Ver estado de líneas modem.")
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
                     elif cmd == '/list':
                         list_available_ports()
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
                     elif cmd == '/clear':
                         os.system('cls' if os.name == 'nt' else 'clear')
                     elif cmd == '/disconnect':
@@ -109,6 +171,7 @@ def main():
                             connection = None
                         else:
                             print("No hay conexión activa.")
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
                     
                     elif cmd == '/view':
                         if len(parts) < 2:
@@ -120,6 +183,7 @@ def main():
                                 print(f"Modo de visualización cambiado a {view_mode}")
                             else:
                                 print("Modo inválido. Use HEX o ASCII.")
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
 
                     elif cmd == '/rts':
                         if isinstance(connection, SerialConnection):
@@ -127,6 +191,7 @@ def main():
                             connection.set_rts(state)
                         else:
                             print("Comando solo disponible en conexión serial.")
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
 
                     elif cmd == '/dtr':
                         if isinstance(connection, SerialConnection):
@@ -134,6 +199,7 @@ def main():
                             connection.set_dtr(state)
                         else:
                             print("Comando solo disponible en conexión serial.")
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
 
                     elif cmd == '/status':
                         if isinstance(connection, SerialConnection):
@@ -144,6 +210,7 @@ def main():
                                 print(f"  {k}: {color}{v}{Colors.ENDC}")
                         else:
                             print("Comando solo disponible en conexión serial.")
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
 
                     elif cmd == '/connect':
                         # /connect serial COM3 115200 --rtscts
@@ -186,6 +253,7 @@ def main():
                             baud = int(parts[2]) if len(parts) > 2 else 115200
                             connection = SerialConnection(port, baud, logger, args.headless, on_message=on_message)
                             connection.connect()
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
 
                     elif cmd == '/listen':
                         # /listen tcp 8080
@@ -200,6 +268,7 @@ def main():
                         port = int(parts[2])
                         connection = TCPServerConnection(port, logger, args.headless, on_message)
                         connection.connect()
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
 
                     elif cmd == '/udp':
                         # /udp local_port remote_host remote_port
@@ -216,9 +285,11 @@ def main():
                         remote_port = int(parts[3])
                         connection = UDPConnection(local_port, remote_host, remote_port, logger, args.headless, on_message)
                         connection.connect()
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
 
                     else:
                         print(f"Comando desconocido: {cmd}")
+                        print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
                 else:
                     if connection and connection.is_connected:
                         data_to_send = user_input

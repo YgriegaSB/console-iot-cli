@@ -1,1 +1,2 @@
 pyserial>=3.5
+pyreadline3>=3.4; sys_platform == 'win32'
