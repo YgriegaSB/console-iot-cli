@@ -86,8 +86,6 @@ class UDPConnection(ConnectionHandler):
                 
                 line = data.decode('latin-1').strip()
                 if line:
-                    # Optional: Filter by remote host? Hercules doesn't strictly enforce it in terminal mode usually.
-                    # But we might want to show source.
                     log_msg = f"[{addr[0]}:{addr[1]}] {line}"
                     self.logger.log(log_msg, "RX")
                     if not self.headless and self.on_message:
@@ -96,6 +94,5 @@ class UDPConnection(ConnectionHandler):
                         print(f"{line}")
             except Exception as e:
                 if not self.stop_event.is_set():
-                    # self.logger.log(f"Error lectura UDP: {e}", "ERROR")
                     pass
                 break

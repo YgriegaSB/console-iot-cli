@@ -112,9 +112,7 @@ class TCPServerConnection(ConnectionHandler):
         self.server_socket: Optional[socket.socket] = None
         self.client_socket: Optional[socket.socket] = None
         self.client_addr = None
-        self._is_connected = False # True if server is running, not necessarily client connected? 
-        # Actually, let's say is_connected means server is listening OR client connected.
-        # But for 'send', we need a client.
+        self._is_connected = False
         
         self.stop_event = threading.Event()
         self.accept_thread: Optional[threading.Thread] = None
@@ -168,8 +166,6 @@ class TCPServerConnection(ConnectionHandler):
                 pass
         
         if self.accept_thread:
-            # Connect to self to unblock accept? Or just let it die with daemon.
-            # Daemon is fine.
             pass
 
         self._is_connected = False
@@ -214,7 +210,6 @@ class TCPServerConnection(ConnectionHandler):
                 
             except Exception as e:
                 if not self.stop_event.is_set():
-                    # self.logger.log(f"Error aceptando conexión: {e}", "ERROR")
                     pass
                 break
 
