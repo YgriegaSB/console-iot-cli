@@ -13,7 +13,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "console-iot=cli_main:main",
+            "console-iot=console_iot.main:main",
         ],
     },
     classifiers=[
