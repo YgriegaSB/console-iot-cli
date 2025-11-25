@@ -51,7 +51,14 @@ def print_help():
   Escribe cualquier texto y presiona ENTER para enviarlo.
 
 {Colors.BOLD}COMANDOS DE CONEXIÓN:{Colors.ENDC}
-  {Colors.BOLD}/connect serial [port] [baud]{Colors.ENDC} : Conectar a puerto serial (ej: /connect serial COM3 115200).
+  {Colors.BOLD}/connect serial [port] [baud] [opciones]{Colors.ENDC}
+    Conectar a puerto serial (ej: /connect serial COM3 115200)
+    Opciones:
+      --data 5|6|7|8       : Bits de datos (default: 8)
+      --parity N|E|O|M|S   : Paridad - None/Even/Odd/Mark/Space (default: N)
+      --stopbits 1|1.5|2   : Bits de parada (default: 1)
+      --rtscts             : Activar control de flujo RTS/CTS
+      --xonxoff            : Activar control de flujo XON/XOFF
   {Colors.BOLD}/connect tcp [host] [port]{Colors.ENDC}    : Conectar como Cliente TCP (ej: /connect tcp 192.168.1.10 23).
   {Colors.BOLD}/listen tcp [port]{Colors.ENDC}            : Iniciar Servidor TCP (ej: /listen tcp 8080).
   {Colors.BOLD}/udp [local_port] [remote_host] [remote_port]{Colors.ENDC} : Iniciar modo UDP.
@@ -213,17 +220,58 @@ def main():
 
                         if type_or_port == 'serial':
                             if len(parts) < 3:
-                                print("Uso: /connect serial [port] [baud] [--rtscts] [--xonxoff]")
+                                print("Uso: /connect serial [port] [baud] [--data 5|6|7|8] [--parity N|E|O|M|S] [--stopbits 1|1.5|2] [--rtscts] [--xonxoff]")
                                 continue
                             port = parts[2]
                             baud = int(parts[3]) if len(parts) > 3 else 115200
                             
-                            rtscts = '--rtscts' in parts
-                            xonxoff = '--xonxoff' in parts
+                            # Valores por defecto (8N1)
+                            bytesize = 8
+                            parity = 'N'
+                            stopbits = 1
+                            rtscts = False
+                            xonxoff = False
+                            
+                            # Parsear parámetros opcionales
+                            i = 4
+                            while i < len(parts):
+                                if parts[i] == '--data' and i + 1 < len(parts):
+                                    try:
+                                        bytesize = int(parts[i + 1])
+                                        if bytesize not in [5, 6, 7, 8]:
+                                            print(f"{Colors.WARNING}Data size inválido. Usando 8.{Colors.ENDC}")
+                                            bytesize = 8
+                                    except ValueError:
+                                        print(f"{Colors.WARNING}Data size inválido. Usando 8.{Colors.ENDC}")
+                                    i += 2
+                                elif parts[i] == '--parity' and i + 1 < len(parts):
+                                    parity_input = parts[i + 1].upper()
+                                    if parity_input in ['N', 'E', 'O', 'M', 'S']:
+                                        parity = parity_input
+                                    else:
+                                        print(f"{Colors.WARNING}Parity inválido. Usando N (none).{Colors.ENDC}")
+                                    i += 2
+                                elif parts[i] == '--stopbits' and i + 1 < len(parts):
+                                    try:
+                                        stopbits = float(parts[i + 1])
+                                        if stopbits not in [1, 1.5, 2]:
+                                            print(f"{Colors.WARNING}Stop bits inválido. Usando 1.{Colors.ENDC}")
+                                            stopbits = 1
+                                    except ValueError:
+                                        print(f"{Colors.WARNING}Stop bits inválido. Usando 1.{Colors.ENDC}")
+                                    i += 2
+                                elif parts[i] == '--rtscts':
+                                    rtscts = True
+                                    i += 1
+                                elif parts[i] == '--xonxoff':
+                                    xonxoff = True
+                                    i += 1
+                                else:
+                                    i += 1
                             
                             spinner = Spinner("Conectando")
                             spinner.start()
-                            connection = SerialConnection(port, baud, logger, args.headless, rtscts, xonxoff, on_message)
+                            connection = SerialConnection(port, baud, logger, args.headless, rtscts, xonxoff, on_message, bytesize, parity, stopbits)
                             result = connection.connect()
                             spinner.stop()
                             

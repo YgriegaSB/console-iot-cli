@@ -9,10 +9,14 @@ from ..utils.colors import Colors
 
 class SerialConnection(ConnectionHandler):
     def __init__(self, port: str, baudrate: int, logger: Logger, headless: bool = False, 
-                 rtscts: bool = False, xonxoff: bool = False, on_message=None):
+                 rtscts: bool = False, xonxoff: bool = False, on_message=None,
+                 bytesize: int = 8, parity: str = 'N', stopbits: float = 1):
         super().__init__(logger, headless, on_message)
         self.port = port
         self.baudrate = baudrate
+        self.bytesize = bytesize
+        self.parity = parity
+        self.stopbits = stopbits
         self.rtscts = rtscts
         self.xonxoff = xonxoff
         self.serial_conn: Optional[serial.Serial] = None
@@ -30,9 +34,9 @@ class SerialConnection(ConnectionHandler):
             self.serial_conn = serial.Serial(
                 port=self.port,
                 baudrate=self.baudrate,
-                bytesize=8,
-                parity='N',
-                stopbits=1,
+                bytesize=self.bytesize,
+                parity=self.parity,
+                stopbits=self.stopbits,
                 timeout=1,
                 rtscts=self.rtscts,
                 xonxoff=self.xonxoff
@@ -42,7 +46,16 @@ class SerialConnection(ConnectionHandler):
             self.read_thread = threading.Thread(target=self._read_loop, daemon=True)
             self.read_thread.start()
             
-            msg = f"Conectado a {self.port} a {self.baudrate} baudios (RTS/CTS={self.rtscts}, XON/XOFF={self.xonxoff})."
+            # Formato de configuración: 8N1, 7E2, etc.
+            config = f"{self.bytesize}{self.parity}{int(self.stopbits) if self.stopbits == int(self.stopbits) else self.stopbits}"
+            flow_control = []
+            if self.rtscts:
+                flow_control.append("RTS/CTS")
+            if self.xonxoff:
+                flow_control.append("XON/XOFF")
+            flow_str = f" ({', '.join(flow_control)})" if flow_control else ""
+            
+            msg = f"Conectado a {self.port} a {self.baudrate} baudios [{config}]{flow_str}."
             self.logger.log(msg, "SYS")
             if not self.headless:
                 print(f"{Colors.GREEN}{msg}{Colors.ENDC}")

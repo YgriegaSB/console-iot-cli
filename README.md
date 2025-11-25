@@ -62,8 +62,24 @@ console-iot --port COM3 --headless
 ## Comandos
 
 ### Conexión
+
+#### Serial
 ```bash
-/connect serial [port] [baud] [--rtscts] [--xonxoff]  # Conectar a puerto serial
+# Conexión básica (usa defaults: 8N1)
+/connect serial [port] [baud]
+
+# Con parámetros opcionales
+/connect serial [port] [baud] [--data 5|6|7|8] [--parity N|E|O|M|S] [--stopbits 1|1.5|2] [--rtscts] [--xonxoff]
+
+# Ejemplos:
+/connect serial COM3 115200                           # 8N1 (default)
+/connect serial COM3 9600 --data 7 --parity E         # 7E1
+/connect serial COM3 19200 --parity O --stopbits 2    # 8O2
+/connect serial COM3 115200 --rtscts                  # 8N1 con RTS/CTS
+```
+
+#### TCP/UDP
+```bash
 /connect tcp [host] [port]                             # Conectar como cliente TCP
 /listen tcp [port]                                     # Iniciar servidor TCP
 /udp [local_port] [remote_host] [remote_port]         # Modo UDP
@@ -105,6 +121,23 @@ $48656C6C6F        # Usando prefijo $
 ```
 
 ## Ejemplos de Uso
+
+### Serial Básico (8N1)
+```bash
+console-iot
+/connect serial COM3 115200
+Hola desde serial
+/disconnect
+```
+
+### Serial con Configuración Personalizada (7E1)
+```bash
+console-iot
+/connect serial COM3 9600 --data 7 --parity E --stopbits 1
+# Útil para protocolos antiguos o equipos industriales
+/status
+/disconnect
+```
 
 ### Serial con Control de Flujo
 ```bash
