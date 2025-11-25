@@ -2,18 +2,18 @@ from setuptools import setup, find_packages
 
 setup(
     name="console-iot-cli",
-    version="1.0.0",
-    description="Una herramienta de línea de comandos para comunicación serial.",
+    version="2.0.0",
+    description="Herramienta CLI para comunicación serial, TCP y UDP - Alternativa a Hercules SETUP Utility.",
     author="Nicolás Pinochet Flores",
     license="CC BY-NC-SA 4.0",
     packages=find_packages(),
-    py_modules=["cli_main"],
     install_requires=[
-        "pyserial",
+        "pyserial>=3.5",
+        "prompt_toolkit>=3.0.0",
     ],
     entry_points={
         "console_scripts": [
-            "console-iot=cli_main:main",
+            "console-iot=console_iot.main:main",
         ],
     },
     classifiers=[
