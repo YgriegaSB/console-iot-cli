@@ -11,6 +11,7 @@ from prompt_toolkit.formatted_text import HTML
 
 from .utils.logger import Logger
 from .utils.colors import Colors
+from .utils.spinner import Spinner
 from .connections.serial_conn import SerialConnection, list_available_ports
 from .connections.tcp_conn import TCPClientConnection, TCPServerConnection
 from .connections.udp_conn import UDPConnection
@@ -142,6 +143,10 @@ def main():
                         print(f"  {Colors.BOLD}/status{Colors.ENDC}          : Ver estado de líneas modem.")
                         print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
                     elif cmd == '/list':
+                        spinner = Spinner("Buscando puertos")
+                        spinner.start()
+                        time.sleep(0.5)  # Simular búsqueda
+                        spinner.stop()
                         list_available_ports()
                         print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
                     elif cmd == '/clear':
@@ -216,8 +221,14 @@ def main():
                             rtscts = '--rtscts' in parts
                             xonxoff = '--xonxoff' in parts
                             
+                            spinner = Spinner("Conectando")
+                            spinner.start()
                             connection = SerialConnection(port, baud, logger, args.headless, rtscts, xonxoff, on_message)
-                            connection.connect()
+                            result = connection.connect()
+                            spinner.stop()
+                            
+                            if not result:
+                                print(f"{Colors.FAIL}✗ Error: No se pudo conectar a {port}{Colors.ENDC}")
                         
                         elif type_or_port == 'tcp':
                             if len(parts) < 4:
@@ -225,15 +236,27 @@ def main():
                                 continue
                             host = parts[2]
                             port = int(parts[3])
+                            spinner = Spinner("Conectando a TCP")
+                            spinner.start()
                             connection = TCPClientConnection(host, port, logger, args.headless, on_message)
-                            connection.connect()
+                            result = connection.connect()
+                            spinner.stop()
+                            
+                            if not result:
+                                print(f"{Colors.FAIL}✗ Error: No se pudo conectar a {host}:{port}{Colors.ENDC}")
                             
                         else:
                             # Legacy / default serial
                             port = parts[1]
                             baud = int(parts[2]) if len(parts) > 2 else 115200
+                            spinner = Spinner("Conectando")
+                            spinner.start()
                             connection = SerialConnection(port, baud, logger, args.headless, on_message=on_message)
-                            connection.connect()
+                            result = connection.connect()
+                            spinner.stop()
+                            
+                            if not result:
+                                print(f"{Colors.FAIL}✗ Error: No se pudo conectar a {port}{Colors.ENDC}")
                         print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
 
                     elif cmd == '/listen':
@@ -247,8 +270,14 @@ def main():
                             connection = None
                             
                         port = int(parts[2])
+                        spinner = Spinner("Iniciando servidor TCP")
+                        spinner.start()
                         connection = TCPServerConnection(port, logger, args.headless, on_message)
-                        connection.connect()
+                        result = connection.connect()
+                        spinner.stop()
+                        
+                        if not result:
+                            print(f"{Colors.FAIL}✗ Error: No se pudo iniciar servidor en puerto {port}{Colors.ENDC}")
                         print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
 
                     elif cmd == '/udp':
@@ -264,8 +293,14 @@ def main():
                         local_port = int(parts[1])
                         remote_host = parts[2]
                         remote_port = int(parts[3])
+                        spinner = Spinner("Iniciando UDP")
+                        spinner.start()
                         connection = UDPConnection(local_port, remote_host, remote_port, logger, args.headless, on_message)
-                        connection.connect()
+                        result = connection.connect()
+                        spinner.stop()
+                        
+                        if not result:
+                            print(f"{Colors.FAIL}✗ Error: No se pudo iniciar UDP en puerto {local_port}{Colors.ENDC}")
                         print(f"{Colors.CYAN}{'─' * 80}{Colors.ENDC}")
 
                     else:

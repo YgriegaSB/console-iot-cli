@@ -35,3 +35,5 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+test_spinner.py
