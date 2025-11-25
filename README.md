@@ -218,7 +218,7 @@ Este proyecto está licenciado bajo [Creative Commons Attribution-NonCommercial-
 
 **En resumen:**
 - ✅ **Permitido**: Uso personal, educativo, modificación y distribución.
-- ⚠️ **Requerido**: Atribución a **Nicolás Pinochet Flores** y compartir bajo la misma licencia.
+- ⚠️ **Requerido**: Atribución a **Nicolás Pinochet** y compartir bajo la misma licencia.
 - ❌ **Prohibido**: Uso comercial sin permiso explícito.
 
 Para más detalles, consulta el archivo [`LICENSE`](LICENSE) o visita la [licencia completa](http://creativecommons.org/licenses/by-nc-sa/4.0/).
